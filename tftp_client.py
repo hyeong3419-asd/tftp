@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-'''
-$ mytftp host_address [-p port_number] <get|put> filename
-'''
+
 import os
 import sys
 import socket
@@ -24,15 +22,15 @@ ERROR_CODE = {
     7: "No such user."
 }
 
-def send_rrq(sock, server_address, filename, mode):
-    format = f'>h{len(filename)}sB{len(mode)}sB'
-    rrq_message = pack(format, OPCODE['RRQ'], bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
-    sock.sendto(rrq_message, server_address)
-
 def send_wrq(sock, server_address, filename, mode):
     format = f'>h{len(filename)}sB{len(mode)}sB'
     wrq_message = pack(format, OPCODE['WRQ'], bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
     sock.sendto(wrq_message, server_address)
+    
+def send_rrq(sock, server_address, filename, mode):
+    format = f'>h{len(filename)}sB{len(mode)}sB'
+    rrq_message = pack(format, OPCODE['RRQ'], bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
+    sock.sendto(rrq_message, server_address)
 
 def send_ack(sock, seq_num, server):
     format = f'>hh'
