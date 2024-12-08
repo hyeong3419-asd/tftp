@@ -62,13 +62,20 @@ if operation == 'get':
 
         while True:
             try:
+                # Wait to receive a DATA packet
+                print('Waiting for DATA packet...')
                 data, server_new_socket = sock.recvfrom(516)
+                print(f'Received packet from {server_new_socket}')
+
                 opcode = int.from_bytes(data[:2], 'big')
 
                 if opcode == OPCODE['DATA']:
                     block_number = int.from_bytes(data[2:4], 'big')
+                    print(f'Received DATA block {block_number}')
+
                     if block_number == expected_block_number:
                         send_ack(sock, block_number, server_new_socket)
+                        print(f"Sent ACK for block {block_number}")
                         file_block = data[4:]
                         file.write(file_block)
                         expected_block_number += 1
@@ -85,7 +92,7 @@ if operation == 'get':
                     break
 
             except socket.timeout:
-                print("Timeout occurred. Retrying...")
+                print("Timeout occurred while waiting for DATA packet. Retrying...")
                 send_rrq(sock, server_address, filename, mode)  # Re-send RRQ
 
 elif operation == 'put':
@@ -100,18 +107,23 @@ elif operation == 'put':
                     break
                 data_packet = pack(f'>hh{len(block)}s', OPCODE['DATA'], block_number, block)
                 sock.sendto(data_packet, server_address)
+                print(f"Sent DATA block {block_number} to {server_address}")
 
                 try:
+                    print("Waiting for ACK...")
                     ack, server_new_socket = sock.recvfrom(516)
+                    print(f"Received packet from {server_new_socket}")
+
                     opcode = int.from_bytes(ack[:2], 'big')
 
                     if opcode == OPCODE['ACK'] and int.from_bytes(ack[2:4], 'big') == block_number:
+                        print(f"Received valid ACK for block {block_number}")
                         block_number += 1
                     else:
                         print("Invalid ACK received. Retrying...")
 
                 except socket.timeout:
-                    print("Timeout occurred. Retrying block", block_number)
+                    print(f"Timeout occurred. Retrying block {block_number}")
                     sock.sendto(data_packet, server_address)  # Re-send current block
 
         print("File upload completed.")
@@ -121,3 +133,4 @@ elif operation == 'put':
 
 sock.close()
 sys.exit(0)
+
